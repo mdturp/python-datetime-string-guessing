@@ -55,6 +55,10 @@ def create_dataset(n_samples):
 x_train, x_train_text, y_train_label, y_train = create_dataset(10000)
 x_test, x_test_text, y_test_label, y_test = create_dataset(1000)
 
+print("-------------")
+print(f"{x_train[0]} ------> {y_train_label[0]}")
+print("------------")
+
 vectorization_layer = tf.keras.layers.TextVectorization(
     max_tokens=MAX_TOKENS,
     standardize=None,
@@ -72,33 +76,51 @@ def vectorize_text(text):
 vectorization_layer.adapt(x_train)
 
 x_train = vectorization_layer(x_train)
-x_test = vectorization_layer(x_test)
-print(x_test.shape)
+x_test_1 = vectorization_layer(x_test)
+print(x_test[0])
+print(x_test_1[0])
 
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Embedding(MAX_TOKENS + 1, EMBEDDING_DIM),
-    tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.GlobalAveragePooling1D(),
-    tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(len(label_classes))])
+vocab = vectorization_layer.get_vocabulary()
+import json
+with open("./model_weights/vocabulary.json", "w") as f:
+    json.dump(vocab, f)
 
-print(model.summary())
+# def vectorize_text_by_my_self(x):
+#     output = []
+#     x_list = list(x)
+#     for idx in range(OUTPUT_SEQUENCE_LENGTH):
+#         token = 0
+#         if idx < len(x_list):
+#             token = vocab.index(x_list[idx])
+#         output.append(token)
+#     return output
 
-model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(
-                from_logits=True),
-              optimizer='adam',
-              metrics=tf.metrics.SparseTopKCategoricalAccuracy(k=2))
+# print(vectorize_text_by_my_self(x_test[0]))
 
-epochs = 1
-history = model.fit(
-    x_train, y_train,
-    validation_data=(x_test, y_test),
-    epochs=epochs)
+# model = tf.keras.models.Sequential([
+#     tf.keras.layers.Embedding(MAX_TOKENS + 1, EMBEDDING_DIM),
+#     tf.keras.layers.Dropout(0.2),
+#     tf.keras.layers.GlobalAveragePooling1D(),
+#     tf.keras.layers.Dropout(0.2),
+#     tf.keras.layers.Dense(len(label_classes))])
 
-export_model = tf.keras.Sequential([
-  vectorization_layer,
-  model,
-  tf.keras.layers.Activation('sigmoid')
-])
+# print(model.summary())
 
-tfjs.converters.save_keras_model(model, "./model_weights")
+# model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(
+#                 from_logits=True),
+#               optimizer='adam',
+#               metrics=tf.metrics.SparseTopKCategoricalAccuracy(k=2))
+
+# epochs = 1
+# history = model.fit(
+#     x_train, y_train,
+#     validation_data=(x_test, y_test),
+#     epochs=epochs)
+
+# export_model = tf.keras.Sequential([
+#   vectorization_layer,
+#   model,
+#   tf.keras.layers.Activation('sigmoid')
+# ])
+
+# tfjs.converters.save_keras_model(model, "./model_weights")

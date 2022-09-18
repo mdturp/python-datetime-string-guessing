@@ -29,11 +29,17 @@
         </div>
         <script>
             const datetimeForm = document.getElementById('datetimeForm');
+            const model_weights_address = "https://raw.githubusercontent.com/mdturp/python-datetime-string-guessing/main/model_weights/model.json"
+            
+            async function prediction(){
+                const model = await tf.loadLayersModel(model_weights_address);
+                console.log(model)
+            }
 
-            function compute() {
+            async function compute() {
                 var x = document.getElementById("datetimeString");
                 const string_value = x.value
-
+                await prediction()
             }
             // datetimeForm.addEventListener('submit', "Hey Submitted");
 
