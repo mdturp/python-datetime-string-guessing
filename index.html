@@ -22,7 +22,8 @@
                 <div class="mdl-textfield mdl-js-textfield">
                     <input class="mdl-textfield__input" type="text"
                         id="datetimeString" onfocusout="compute()">
-                    <label class="mdl-textfield__label" for="datetimeString">Enter
+                    <label class="mdl-textfield__label"
+                        for="datetimeString">Enter
                         Datetime String</label>
                 </div>
             </div>
@@ -30,16 +31,45 @@
         <script>
             const datetimeForm = document.getElementById('datetimeForm');
             const model_weights_address = "https://raw.githubusercontent.com/mdturp/python-datetime-string-guessing/main/model_weights/model.json"
-            
-            async function prediction(){
-                const model = await tf.loadLayersModel(model_weights_address);
-                console.log(model)
+            const vocabulary_address = "https://raw.githubusercontent.com/mdturp/python-datetime-string-guessing/main/model_weights/vocabulary.json"
+            const OUTPUT_SEQUENCE_LENGTH = 250
+
+            function tokenize_input(x, vocabulary) {
+  
+                const x_array = Array.from(x);
+                var output = []
+                for (var i = 0; i < OUTPUT_SEQUENCE_LENGTH; i++){
+                    var token = 0;
+                    if (i < x_array.length) {
+                        token = vocabulary.indexOf(x_array[i])
+                        if (token === -1) {
+                            token = 1
+                        }
+                    }
+                    output.push(token)
+                }
+                return output
+            }
+
+            async function prediction() {
+               
+               
+                
+                console.log(vocabulary)
             }
 
             async function compute() {
                 var x = document.getElementById("datetimeString");
-                const string_value = x.value
-                await prediction()
+                const string_value = x.value;
+                const vocabulary_response = await fetch(vocabulary_address);
+                const vocabulary = await vocabulary_response.json();
+                const tokenized_word = tokenize_input(string_value, vocabulary);
+                const broadcasted = tf.broadcastTo(tokenized_word, [1, OUTPUT_SEQUENCE_LENGTH])
+                const model = await tf.loadLayersModel(model_weights_address);
+                const prediction = await model.predict(broadcasted);
+                const prediction_arr = Array.from(prediction.squeeze().dataSync());
+
+                console.log(prediction_arr)
             }
             // datetimeForm.addEventListener('submit', "Hey Submitted");
 

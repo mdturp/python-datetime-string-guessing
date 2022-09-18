@@ -1,14 +1,18 @@
-from cProfile import label
+
 import datetime
+import json
+
 import numpy as np
 import tensorflow as tf
 import tensorflowjs as tfjs
 
-import supported_datetime_formats as sdf
 
 rng = np.random.default_rng(1)
 
-label_classes = [s["format"] for s in sdf.formats]
+with open("./supported_datetime_formats.json", "r") as f:
+    sdf = json.load(f)
+
+label_classes = [s["format"] for s in sdf]
 
 # label_classes = [
 #     "%d/%m/%y",
@@ -81,46 +85,34 @@ print(x_test[0])
 print(x_test_1[0])
 
 vocab = vectorization_layer.get_vocabulary()
-import json
+
 with open("./model_weights/vocabulary.json", "w") as f:
     json.dump(vocab, f)
 
-# def vectorize_text_by_my_self(x):
-#     output = []
-#     x_list = list(x)
-#     for idx in range(OUTPUT_SEQUENCE_LENGTH):
-#         token = 0
-#         if idx < len(x_list):
-#             token = vocab.index(x_list[idx])
-#         output.append(token)
-#     return output
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Embedding(MAX_TOKENS + 1, EMBEDDING_DIM),
+    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.GlobalAveragePooling1D(),
+    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dense(len(label_classes))])
 
-# print(vectorize_text_by_my_self(x_test[0]))
+print(model.summary())
 
-# model = tf.keras.models.Sequential([
-#     tf.keras.layers.Embedding(MAX_TOKENS + 1, EMBEDDING_DIM),
-#     tf.keras.layers.Dropout(0.2),
-#     tf.keras.layers.GlobalAveragePooling1D(),
-#     tf.keras.layers.Dropout(0.2),
-#     tf.keras.layers.Dense(len(label_classes))])
+model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(
+                from_logits=True),
+              optimizer='adam',
+              metrics=tf.metrics.SparseTopKCategoricalAccuracy(k=2))
 
-# print(model.summary())
+epochs = 1
+history = model.fit(
+    x_train, y_train,
+    validation_data=(x_test, y_test),
+    epochs=epochs)
 
-# model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(
-#                 from_logits=True),
-#               optimizer='adam',
-#               metrics=tf.metrics.SparseTopKCategoricalAccuracy(k=2))
+export_model = tf.keras.Sequential([
+  vectorization_layer,
+  model,
+  tf.keras.layers.Activation('sigmoid')
+])
 
-# epochs = 1
-# history = model.fit(
-#     x_train, y_train,
-#     validation_data=(x_test, y_test),
-#     epochs=epochs)
-
-# export_model = tf.keras.Sequential([
-#   vectorization_layer,
-#   model,
-#   tf.keras.layers.Activation('sigmoid')
-# ])
-
-# tfjs.converters.save_keras_model(model, "./model_weights")
+tfjs.converters.save_keras_model(model, "./model_weights")
