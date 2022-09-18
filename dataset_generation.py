@@ -2,6 +2,7 @@ from cProfile import label
 import datetime
 import numpy as np
 import tensorflow as tf
+import tensorflowjs as tfjs
 
 import supported_datetime_formats as sdf
 
@@ -88,8 +89,16 @@ model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(
               optimizer='adam',
               metrics=tf.metrics.SparseTopKCategoricalAccuracy(k=2))
 
-epochs = 10
+epochs = 1
 history = model.fit(
     x_train, y_train,
     validation_data=(x_test, y_test),
     epochs=epochs)
+
+export_model = tf.keras.Sequential([
+  vectorization_layer,
+  model,
+  tf.keras.layers.Activation('sigmoid')
+])
+
+tfjs.converters.save_keras_model(model, "./model_weights")
