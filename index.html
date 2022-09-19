@@ -11,27 +11,37 @@
         <script
             src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.2.0/dist/tf.min.js">
             </script>
+        <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" type="text/css">
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
 
     <body>
+        
         <p></p>
         <div style="margin: auto; width: 50%; padding: 3px;">
-            <div style="width: 90%">
+            <h1  style="text-align: center; font-size: 4vw">Python Datetime String Guesser</h1>
+            <div style="width: 90%; text-align: center;">
                 <div class="mdl-textfield mdl-js-textfield">
                     <input class="mdl-textfield__input" type="text"
                         id="datetimeString" onfocusout="compute()">
-                    <label class="mdl-textfield__label"
+                    <label class="mdl-textfield__label" style="text-align: center;"
                         for="datetimeString">Enter
                         Datetime String</label>
                 </div>
             </div>
         </div>
+        <div style="margin: auto; width: 50%; padding: 3px;">
+            <p id="result_string" style="text-align: center; padding: 3px; font-size: 2vw;">  </p>
+        </div>
+        <div id="my_dataviz">
+
+        </div>
         <script>
             const datetimeForm = document.getElementById('datetimeForm');
             const model_weights_address = "https://raw.githubusercontent.com/mdturp/python-datetime-string-guessing/main/model_weights/model.json"
             const vocabulary_address = "https://raw.githubusercontent.com/mdturp/python-datetime-string-guessing/main/model_weights/vocabulary.json"
+            const supported_datetime_formats_address = "https://raw.githubusercontent.com/mdturp/python-datetime-string-guessing/main/supported_datetime_formats.json"
             const OUTPUT_SEQUENCE_LENGTH = 250
 
             function tokenize_input(x, vocabulary) {
@@ -63,15 +73,21 @@
                 const string_value = x.value;
                 const vocabulary_response = await fetch(vocabulary_address);
                 const vocabulary = await vocabulary_response.json();
+                
+                const datetime_formats_response = await fetch(supported_datetime_formats_address);
+                const datetime_formats = await datetime_formats_response.json();
+
                 const tokenized_word = tokenize_input(string_value, vocabulary);
                 const broadcasted = tf.broadcastTo(tokenized_word, [1, OUTPUT_SEQUENCE_LENGTH])
                 const model = await tf.loadLayersModel(model_weights_address);
-                const prediction = await model.predict(broadcasted);
+                const prediction_logits = await model.predict(broadcasted);
+                const prediction = prediction_logits.softmax()
                 const prediction_arr = Array.from(prediction.squeeze().dataSync());
-
-                console.log(prediction_arr)
+                
+                let max_index = prediction_arr.reduce((iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0);
+                let result = datetime_formats[max_index].format
+                document.getElementById("result_string").innerHTML=result;
             }
-            // datetimeForm.addEventListener('submit', "Hey Submitted");
 
         </script>
     </body>
