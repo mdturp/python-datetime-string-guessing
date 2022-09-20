@@ -11,30 +11,53 @@
         <script
             src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.2.0/dist/tf.min.js">
             </script>
-        <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" type="text/css">
+        <link rel="stylesheet"
+            href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700"
+            type="text/css">
+        <script src="https://d3js.org/d3.v7.min.js"></script>
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+        <style>
+            @media screen and (min-width: 601px) {
+                h1 {
+                    font-size: 30px;
+                }
+            }
+
+            @media screen and (max-width: 600px) {
+                h1 {
+                    font-size: 20px;
+                }
+            }
+
+        </style>
+
     </head>
 
     <body>
-        
+
         <p></p>
         <div style="margin: auto; width: 50%; padding: 3px;">
-            <h1  style="text-align: center; font-size: 4vw">Python Datetime String Guesser</h1>
-            <div style="width: 90%; text-align: center;">
+            <h1 style="text-align: center; ">Python Datetime
+                String Guesser</h1>
+            <div style="text-align: center;">
                 <div class="mdl-textfield mdl-js-textfield">
                     <input class="mdl-textfield__input" type="text"
                         id="datetimeString" onfocusout="compute()">
-                    <label class="mdl-textfield__label" style="text-align: center;"
-                        for="datetimeString">Enter Datetime String</label>
+                    <label class="mdl-textfield__label"
+                        style="text-align: center;" for="datetimeString">Enter
+                        Datetime String</label>
                 </div>
             </div>
         </div>
         <div style="margin: auto; width: 50%; padding: 3px;">
-            <p id="result_string" style="text-align: center; padding: 3px; font-size: 2vw;">  </p>
+            <p id="result_string" style="text-align: center; padding: 3px;">
+            </p>
         </div>
-        <div id="my_dataviz">
-
+        <div style="margin: auto; width: 50%; padding: 3px;">
+            <div id="my_dataviz"></div>
         </div>
         <script>
             const datetimeForm = document.getElementById('datetimeForm');
@@ -44,10 +67,10 @@
             const OUTPUT_SEQUENCE_LENGTH = 250
 
             function tokenize_input(x, vocabulary) {
-  
+
                 const x_array = Array.from(x);
                 var output = []
-                for (var i = 0; i < OUTPUT_SEQUENCE_LENGTH; i++){
+                for (var i = 0; i < OUTPUT_SEQUENCE_LENGTH; i++) {
                     var token = 0;
                     if (i < x_array.length) {
                         token = vocabulary.indexOf(x_array[i])
@@ -60,11 +83,57 @@
                 return output
             }
 
-            async function prediction() {
-               
-               
-                
-                console.log(vocabulary)
+            function display(data) {
+                d3.select("#svg_graphic").remove()
+
+                var margin = { top: 20, right: 20, bottom: 40, left: 150 },
+                    width = 360 - margin.left - margin.right,
+                    height = 400 - margin.top - margin.bottom;
+
+                var svg = d3.select("#my_dataviz")
+                    .append("svg")
+                    .attr("id","svg_graphic")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform",
+                        "translate(" + margin.left + "," + margin.top + ")");
+
+                var x = d3.scaleLinear()
+                    .domain([0, 1])
+                    .range([0, width]);
+                svg.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x))
+                    .selectAll("text")
+                    .attr("transform", "translate(-10,0)rotate(-45)")
+                    .style("text-anchor", "end");
+
+                var y = d3.scaleBand()
+                    .range([0, height])
+                    .domain(data.map(function (d) { return d.format; }))
+                    .padding(.1);
+                svg.append("g")
+                    .call(d3.axisLeft(y))
+
+                svg.selectAll("myRect")
+                    .data(data)
+                    .enter()
+                    .append("rect")
+                    .attr("x", x(0))
+                    .attr("y", function (d) { return y(d.format); })
+                    // no bar at the beginning thus always return 0:
+                    .attr("width", function (d) { return 0; })
+                    .attr("height", y.bandwidth())
+                    .attr("fill", "#69b3a2")
+
+                svg.selectAll("rect")
+                    .transition()
+                    .duration(800)
+                    .attr("y", function (d) { return y(d.format); })
+                    .attr("width", function (d) { return x(d.value); })
+                    .attr("height", y.bandwidth())
+                    .delay(function (d, i) { return (i * 100) })
             }
 
             async function compute() {
@@ -72,7 +141,7 @@
                 const string_value = x.value;
                 const vocabulary_response = await fetch(vocabulary_address);
                 const vocabulary = await vocabulary_response.json();
-                
+
                 const datetime_formats_response = await fetch(supported_datetime_formats_address);
                 const datetime_formats = await datetime_formats_response.json();
 
@@ -82,10 +151,20 @@
                 const prediction_logits = await model.predict(broadcasted);
                 const prediction = prediction_logits.softmax()
                 const prediction_arr = Array.from(prediction.squeeze().dataSync());
-                
+
+                let data = []
+                for (var i = 0; i < prediction_arr.length; i++) {
+                    data.push({
+                        "format": datetime_formats[i].format,
+                        "value": prediction_arr[i]
+                    })
+                }
+
                 let max_index = prediction_arr.reduce((iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0);
                 let result = datetime_formats[max_index].format
-                document.getElementById("result_string").innerHTML=result;
+                document.getElementById("result_string").innerHTML = result;
+
+                display(data)
             }
 
         </script>
