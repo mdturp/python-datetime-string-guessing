@@ -14,18 +14,6 @@ with open("./supported_datetime_formats.json", "r") as f:
 
 label_classes = [s["format"] for s in sdf]
 
-# label_classes = [
-#     "%d/%m/%y",
-#     "%d. %B %Y",
-#     "%b %d, %Y %I:%M:%S %p",
-#     "%b %d, %Y",
-#     "%B %d, %Y %I:%M:%S %p",
-#     "%B %d, %Y",
-#     "%a %b %d %H:%M:%S %Y",
-#     "%A %b %d %H:%M:%S %Y",
-#     "%a %b %d %Y %H:%M:%S ",
-#     "%A %d-%b %y %H:%M:%S",
-#     ]
 starting_date = datetime.date(2002, 12, 4)
 
 MAX_TOKENS = 250
@@ -34,7 +22,6 @@ EMBEDDING_DIM = 16
 
 
 def create_dataset(n_samples):
-    x_text = []
     x = []
     y = []
     y_integer = []
@@ -44,20 +31,18 @@ def create_dataset(n_samples):
         delta = datetime.timedelta(days=days, seconds=seconds)
         new_day = starting_date + delta
         for idx, l in enumerate(label_classes):
-            x_text.append(new_day)
             x.append(new_day.strftime(l))
             y_integer.append(idx)
             y.append(l)
     idx_shuffle = rng.shuffle(list(range(len(x))))
 
     return (np.squeeze(np.array(x)[idx_shuffle]),
-            np.squeeze(np.array(x_text)[idx_shuffle]),
             np.squeeze(np.array(y)[idx_shuffle]),
             np.squeeze(np.array(y_integer)[idx_shuffle]))
 
 
-x_train, x_train_text, y_train_label, y_train = create_dataset(10000)
-x_test, x_test_text, y_test_label, y_test = create_dataset(1000)
+x_train, y_train_label, y_train = create_dataset(30000)
+x_test, y_test_label, y_test = create_dataset(1000)
 
 print("-------------")
 print(f"{x_train[0]} ------> {y_train_label[0]}")
@@ -80,9 +65,7 @@ def vectorize_text(text):
 vectorization_layer.adapt(x_train)
 
 x_train = vectorization_layer(x_train)
-x_test_1 = vectorization_layer(x_test)
-print(x_test[0])
-print(x_test_1[0])
+x_test = vectorization_layer(x_test)
 
 vocab = vectorization_layer.get_vocabulary()
 
@@ -94,6 +77,8 @@ model = tf.keras.models.Sequential([
     tf.keras.layers.Dropout(0.2),
     tf.keras.layers.GlobalAveragePooling1D(),
     tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dense(10, activation="selu"),
+    tf.keras.layers.Dropout(0.2),
     tf.keras.layers.Dense(len(label_classes))])
 
 print(model.summary())
@@ -103,16 +88,11 @@ model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(
               optimizer='adam',
               metrics=tf.metrics.SparseTopKCategoricalAccuracy(k=2))
 
-epochs = 1
+epochs = 10
 history = model.fit(
     x_train, y_train,
     validation_data=(x_test, y_test),
     epochs=epochs)
 
-export_model = tf.keras.Sequential([
-  vectorization_layer,
-  model,
-  tf.keras.layers.Activation('sigmoid')
-])
 
 tfjs.converters.save_keras_model(model, "./model_weights")

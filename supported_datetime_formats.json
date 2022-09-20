@@ -1,19 +1,58 @@
 [
-    {"example": "May 8, 2009 5:57:51 PM",
-     "format": "%b %d, %Y %I:%M%S %p"},
-
-    {"example": "Oct 7, 1970",
-     "format": "%b %d, %Y"},
-
-    {"example": "Oct 7, 1970",
-     "format": "%b %d %Y"},
-
-    {"example": "Oct. 7, 70",
-     "format": "%b. %d, %y"},
-
-    {"example": "Oct. 7, '70",
-     "format": "%b. %d, '%y"},
-
-    {"example": "Mon Jan  2 15:04:05 2006",
-     "format": "%a %b  %d %H:%M%S %Y"}
+    {
+        "example": "May 8, 2009 5:57:51 PM",
+        "format": "%b %d, %Y %I:%M%S %p"
+    },
+    {
+        "example": "Oct 7, 1970",
+        "format": "%b %d, %Y"
+    },
+    {
+        "example": "October 7, 1970",
+        "format": "%B %d, %Y"
+    },
+    {
+        "example": "Oct 7, 1970",
+        "format": "%b %d, %Y"
+    },
+    {
+        "example": "October 7, 1970",
+        "format": "%B %d, %Y"
+    },
+    {
+        "example": "Oct 7, 1970",
+        "format": "%b %d %Y"
+    },
+    {
+        "example": "Oct. 7, 70",
+        "format": "%b. %d, %y"
+    },
+    {
+        "example": "Oct. 7, '70",
+        "format": "%b. %d, '%y"
+    },
+    {
+        "example": "October 7, '70",
+        "format": "%B %d, '%y"
+    },
+    {
+        "example": "Mon Jan  2 15:04:05 2006",
+        "format": "%a %b  %d %H:%M%S %Y"
+    },
+    {
+        "example": "September 17, 2012 10:09am",
+        "format": "%B %d, %Y %I:%M%p"
+    },
+    {
+        "example": "2013-Feb-03",
+        "format": "%Y-%b-%d"
+    },
+    {
+        "example": "3/31/2014",
+        "format": "%m/%d/%Y"
+    },
+    {
+        "example": "31/3/2014",
+        "format": "%d/%m/%Y"
+    }
 ]
